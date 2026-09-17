@@ -17,19 +17,18 @@ jobs:
       - name: Récupérer le code source
         uses: actions/checkout@v4
 
-      - name: Libérer de l'espace disque
+      - name: Libérer de l'espace disque sur le serveur
         run: |
+          echo "==> Espace disque avant nettoyage :"
+          df -h /
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/share/boost
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           sudo docker image prune --all --force || true
           sudo apt-get clean
-
-      - name: Installer les dépendances système Linux
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev clang cmake ninja-build pkg-config libstdc++-12-dev mesa-utils
+          echo "==> Espace disque après nettoyage :"
+          df -h /
 
       - name: Configurer Java JDK
         uses: actions/setup-java@v4
@@ -48,21 +47,59 @@ jobs:
           flutter-version: "3.24.5"
           cache: true
 
+      - name: Dépendances système Linux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            pkg-config \
+            libjpeg-dev \
+            zlib1g-dev \
+            libfreetype6-dev \
+            liblcms2-dev \
+            libwebp-dev \
+            libgtk-3-dev \
+            ninja-build
+
       - name: Acceptation des licences Android SDK
         run: |
           flutter config --no-analytics
           yes | flutter doctor --android-licenses || true
 
-      - name: Installation de Flet CLI (Version stable)
+      - name: Préparation de Flet, ReportLab & Stub PIL
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install "flet==0.24.1"
+          python -m pip install --upgrade "pip<24" "setuptools<70" wheel
 
-      - name: Générer l'APK Android
+          # Mettre à jour Flet vers la dernière version compatible Flutter 3.24+
+          pip install --upgrade flet
+          pip install -e . || pip install .
+
+          # 1. Téléchargement direct de ReportLab en Python pur dans le projet
+          pip install reportlab --target . --no-deps
+
+          # 2. Simulation du module PIL pour éviter l'erreur sur le téléphone
+          mkdir -p PIL
+          cat << 'EOF' > PIL/__init__.py
+          from . import Image
+          EOF
+          
+          cat << 'EOF' > PIL/Image.py
+          class Image:
+              @staticmethod
+              def open(fp, mode='r'):
+                  return Image()
+              def resize(self, size, *args, **kwargs):
+                  return self
+              def convert(self, *args, **kwargs):
+                  return self
+          EOF
+
+      - name: Générer l'APK Android (Mode non-interactif)
         env:
           CI: "true"
           FLUTTER_SUPPRESS_ANALYTICS: "true"
           PUB_DISABLE_ANALYTICS: "true"
+          PIP_VERBOSE: "1"
         run: |
           yes | flet build apk --verbose
 
@@ -77,13 +114,22 @@ jobs:
 
           if [ -n "$APK_FILE" ] && [ -f "$APK_FILE" ]; then
             echo "Publication de l'APK sur GitHub Releases..."
-            gh release delete latest --yes --cleanup-tag || true
+            
+            # Nettoyage de l'ancienne release "latest" pour la remplacer
+            gh release delete latest --yes || true
+            git tag -d latest || true
+            git push origin :refs/tags/latest || true
+
+            # Création de la release avec le fichier APK attaché
             gh release create latest "$APK_FILE" \
               --title "Dernière version APK" \
               --notes "Compilation automatique effectuée avec succès." \
               --prerelease
-            echo "APK publié avec succès !"
+              
+            echo "=========================================================="
+            echo " ✔ APK publié ! Téléchargeable dans la rubrique Releases de ton dépôt."
+            echo "=========================================================="
           else
-            echo "Erreur : Aucun fichier APK trouvé."
+            echo "❌ Aucun fichier APK n'a été trouvé."
             exit 1
           fi
