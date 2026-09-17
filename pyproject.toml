@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "G-A-E"
+version = "0.1.0"
+description = "Application de gestion pour micro-entreprise / auto-entrepreneur développée avec Flet."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Francky" }
+]
+keywords = ["flet", "facturation", "auto-entrepreneur", "micro-entreprise", "gestion", "devis", "comptabilite"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Accounting",
+]
+
+dependencies = [
+    "flet>=0.21.2",
+    "fpdf2",
+    "requests",
+    "pypdf"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+    "flake8>=6.0",
+    "black>=23.0",
+]
+
+[project.scripts]
+gestion-auto-entreprise = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/votre-utilisateur/votre-depot"
+Repository = "https://github.com/votre-utilisateur/votre-depot.git"
+Issues = "https://github.com/votre-utilisateur/votre-depot/issues"
+
+# --- AJOUT INDISPENSABLE POUR LA DÉCOUVERTE DES DOSSIERS ---
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.black]
+line-length = 120
+target-version = ['py310', 'py311', 'py312']
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
