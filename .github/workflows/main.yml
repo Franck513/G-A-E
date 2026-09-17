@@ -70,6 +70,10 @@ jobs:
         run: |
           python -m pip install --upgrade "pip<24" "setuptools<70" wheel
 
+          # Verrouillage de Flet sur la version 0.22.2 pour éviter la rupture de compatibilité
+          pip install flet==0.22.2
+          pip install -e . || pip install .
+
           # 1. Téléchargement direct de ReportLab en Python pur dans le projet
           pip install reportlab --target . --no-deps
 
