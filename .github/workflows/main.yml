@@ -9,12 +9,12 @@ permissions:
   contents: write
 
 jobs:
-  build-android:
+  build-apk:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
 
     steps:
-      - name: Récupérer le code source
+      - name: Récupération du code source
         uses: actions/checkout@v4
 
       - name: Libérer de l'espace disque sur le serveur
@@ -30,21 +30,21 @@ jobs:
           echo "==> Espace disque après nettoyage :"
           df -h /
 
-      - name: Configurer Java JDK
+      - name: Configuration de Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
-      - name: Configurer Python
+      - name: Configuration de Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Configuration de Flutter 3.22.2
+      - name: Configuration de Flutter 3.24.5
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.22.2"
+          flutter-version: "3.24.5"
           cache: true
 
       - name: Dépendances système Linux
@@ -66,18 +66,22 @@ jobs:
           flutter config --no-analytics
           yes | flutter doctor --android-licenses || true
 
-      - name: Préparation des dépendances (Python pur)
+      - name: Intégration de Flet 0.21.2, FPDF2, ReportLab et Simulation PIL
         run: |
           python -m pip install --upgrade "pip<24" "setuptools<70" wheel
-          pip install "flet==0.21.2"
 
-          # 1. Suppression des fichiers de configuration déclenchant la résolution pip
-          rm -f pyproject.toml setup.py setup.cfg requirements.txt
+          # 1. Écriture d'un requirements.txt contenant uniquement les paquets Python pur
+          echo "flet==0.21.2" > requirements.txt
+          echo "requests" >> requirements.txt
+          echo "pypdf" >> requirements.txt
+          pip install -r requirements.txt
+          pip install . || true
 
-          # 2. Téléchargement direct des modules Python pur dans le dossier du projet
-          pip install fpdf2 pypdf requests reportlab urllib3 certifi charset_normalizer idna --target . --no-deps
+          # 2. Téléchargement direct de fpdf2 et reportlab en Python pur dans le dossier du projet
+          pip install fpdf2 --target . --no-deps
+          pip install reportlab --target . --no-deps
 
-          # 3. Simulation du module PIL (stub)
+          # 3. Simulation du module PIL virtuel pour feinter fpdf2 et reportlab
           mkdir -p PIL
           cat << 'EOF' > PIL/__init__.py
           from . import Image
@@ -94,7 +98,7 @@ jobs:
                   return self
           EOF
 
-      - name: Générer l'APK Android (Mode non-interactif)
+      - name: Compilation de l'APK Flet
         env:
           CI: "true"
           FLUTTER_SUPPRESS_ANALYTICS: "true"
