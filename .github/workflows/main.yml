@@ -74,10 +74,10 @@ jobs:
           pip install "flet==0.21.2"
           pip install -e . || pip install .
 
-          # 1. Téléchargement direct de ReportLab en Python pur dans le projet
+          # 1. Téléchargement direct de ReportLab en Python pur
           pip install reportlab --target . --no-deps
 
-          # 2. Simulation du module PIL pour éviter l'erreur sur le téléphone
+          # 2. Leurre pour le code Python (module PIL)
           mkdir -p PIL
           cat << 'EOF' > PIL/__init__.py
           from . import Image
@@ -92,6 +92,15 @@ jobs:
                   return self
               def convert(self, *args, **kwargs):
                   return self
+          EOF
+
+          # 3. Leurre pour les métadonnées PIP (évite la compilation C de Pillow par fpdf2)
+          mkdir -p Pillow-10.3.0.dist-info
+          cat << 'EOF' > Pillow-10.3.0.dist-info/METADATA
+          Metadata-Version: 2.1
+          Name: Pillow
+          Version: 10.3.0
+          Summary: Fake Pillow pour compilation Android
           EOF
 
       - name: Générer l'APK Android (Mode non-interactif)
