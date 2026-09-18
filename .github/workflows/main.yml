@@ -101,7 +101,7 @@ jobs:
           PUB_DISABLE_ANALYTICS: "true"
           PIP_VERBOSE: "1"
         run: |
-          echo "y" | flet build apk --python-version 3.11 --verbose
+          flet build apk --verbose
 
       - name: Publier l'APK sur GitHub Releases
         env:
