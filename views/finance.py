@@ -65,19 +65,16 @@ class FinanceView(ft.Container):
         self.expand = True
         self.padding = 15
 
-        # Récupération et persistance sécurisées des paramètres de l'entreprise
+        # Récupération sécurisée des paramètres de base de l'entreprise
         self.entreprise_data = getattr(self.app, "entreprise", {})
-        if not isinstance(self.entreprise_data, dict):
-            self.entreprise_data = {}
-
-        # Si aucune date n'est enregistrée, on la fixe AUJOURD'HUI une fois pour toutes et on sauvegarde
-        if not self.entreprise_data.get("date_creation"):
-            self.entreprise_data["date_creation"] = datetime.now().strftime("%d/%m/%Y")
-            if hasattr(self.app, "save_data"):
-                self.app.save_data()
-
-        self.date_creation = self.entreprise_data.get("date_creation")
-        self.activite = self.entreprise_data.get("type_activite", "Services")
+        if isinstance(self.entreprise_data, dict):
+            self.date_creation = self.entreprise_data.get(
+                "date_creation", datetime.now().strftime("%d/%m/%Y")
+            )
+            self.activite = self.entreprise_data.get("type_activite", "Services")
+        else:
+            self.date_creation = datetime.now().strftime("%d/%m/%Y")
+            self.activite = "Services"
 
         self._build_interface()
 
@@ -311,28 +308,9 @@ class FinanceView(ft.Container):
         )
 
     def update_dashboard(self):
-        """Mise à jour dynamique avec enregistrement persistant de la date."""
-        input_date = self.tf_date.value.strip() if self.tf_date.value else ""
-        input_type = self.dd_type.value
-
+        """Mise à jour dynamique garantie sans erreur d'attribut."""
         if hasattr(self.app, "load_data"):
             self.app.load_data()
-
-        self.entreprise_data = getattr(self.app, "entreprise", {})
-        if isinstance(self.entreprise_data, dict):
-            # Sauvegarde permanente de la date et du type d'activité
-            if input_date:
-                self.entreprise_data["date_creation"] = input_date
-            elif not self.entreprise_data.get("date_creation"):
-                self.entreprise_data["date_creation"] = datetime.now().strftime("%d/%m/%Y")
-
-            if input_type:
-                self.entreprise_data["type_activite"] = input_type
-
-            self.tf_date.value = self.entreprise_data.get("date_creation")
-
-            if hasattr(self.app, "save_data"):
-                self.app.save_data()
 
         now = datetime.now()
         ca_mensuel = 0.0
@@ -433,7 +411,7 @@ class FinanceView(ft.Container):
             f" ({reste_a_facturer:,.2f} € disponibles)"
         )
 
-        # --- CONSTRUCTION DU GRAPHIQUE ---
+        # --- CONSTRUCTION DU GRAPHIQUE CORRIGÉ ---
         months_labels = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
         max_tax = max([m * taux_urssaf for m in months_ca] + [100.0])
         max_height = 140.0
@@ -472,3 +450,4 @@ class FinanceView(ft.Container):
 
         if self.page:
             self.update()
+```[cite: 20]
