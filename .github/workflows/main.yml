@@ -59,7 +59,10 @@ jobs:
             liblcms2-dev \
             libwebp-dev \
             libgtk-3-dev \
-            ninja-build
+            ninja-build \
+            libncurses5 \
+            libtinfo5 \
+            libffi-dev
 
       - name: Acceptation des licences Android SDK
         run: |
@@ -70,18 +73,18 @@ jobs:
         run: |
           python -m pip install --upgrade "pip<24" "setuptools<70" wheel
 
-          # 1. Écriture d'un requirements.txt contenant uniquement les paquets Python pur
+          # 1. Écriture du requirements.txt pour Flet 0.21.2
           echo "flet==0.21.2" > requirements.txt
           echo "requests" >> requirements.txt
           echo "pypdf" >> requirements.txt
           pip install -r requirements.txt
           pip install . || true
 
-          # 2. Téléchargement direct de fpdf2 et reportlab en Python pur dans le dossier du projet
+          # 2. Téléchargement direct de fpdf2 et reportlab en Python pur
           pip install fpdf2 --target . --no-deps
           pip install reportlab --target . --no-deps
 
-          # 3. Simulation du module PIL virtuel pour feinter fpdf2 et reportlab
+          # 3. Simulation du module PIL virtuel
           mkdir -p PIL
           cat << 'EOF' > PIL/__init__.py
           from . import Image
@@ -119,7 +122,7 @@ jobs:
           if [ -n "$APK_FILE" ] && [ -f "$APK_FILE" ]; then
             echo "Publication de l'APK sur GitHub Releases..."
             
-            # Nettoyage de l'ancienne release "latest" pour la remplacer
+            # Nettoyage de l'ancienne release "latest"
             gh release delete latest --yes || true
             git tag -d latest || true
             git push origin :refs/tags/latest || true
