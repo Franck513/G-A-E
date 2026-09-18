@@ -84,7 +84,10 @@ jobs:
           pip install fpdf2 --target . --no-deps
           pip install reportlab --target . --no-deps
 
-          # 3. Simulation du module PIL virtuel
+          # 3. Nettoyage des fichiers de tests/démos qui bloquent compileall
+          find . -type d \( -name "test" -o -name "tests" -o -name "samples" -o -name "demos" -o -name "docs" \) -exec rm -rf {} + 2>/dev/null || true
+
+          # 4. Simulation du module PIL virtuel
           mkdir -p PIL
           cat << 'EOF' > PIL/__init__.py
           from . import Image
