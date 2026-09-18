@@ -71,13 +71,13 @@ jobs:
           python -m pip install --upgrade "pip<24" "setuptools<70" wheel
           pip install "flet==0.21.2"
 
-          # 1. Suppression de requirements.txt pour éviter la chaîne vide transmise à pip
-          rm -f requirements.txt
+          # 1. Suppression des fichiers de configuration déclenchant la résolution pip
+          rm -f pyproject.toml setup.py setup.cfg requirements.txt
 
-          # 2. Téléchargement de toutes les bibliothèques en Python pur dans le dossier du projet
+          # 2. Téléchargement direct des modules Python pur dans le dossier du projet
           pip install fpdf2 pypdf requests reportlab urllib3 certifi charset_normalizer idna --target . --no-deps
 
-          # 3. Simulation du module PIL pour tromper fpdf2 et reportlab
+          # 3. Simulation du module PIL (stub)
           mkdir -p PIL
           cat << 'EOF' > PIL/__init__.py
           from . import Image
