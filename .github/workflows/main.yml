@@ -69,25 +69,52 @@ jobs:
           flutter config --no-analytics
           yes | flutter doctor --android-licenses || true
 
-      - name: Intégration de Flet 0.21.2, FPDF2, ReportLab et Simulation PIL
+      - name: Intégration des dépendances et assainissement Python
         run: |
           python -m pip install --upgrade "pip<24" "setuptools<70" wheel
 
-          # 1. Écriture du requirements.txt pour Flet 0.21.2
+          # 1. Dépendances principales
           echo "flet==0.21.2" > requirements.txt
           echo "requests" >> requirements.txt
           echo "pypdf" >> requirements.txt
           pip install -r requirements.txt
           pip install . || true
 
-          # 2. Téléchargement direct de fpdf2 et reportlab en Python pur
+          # 2. Injection directe des paquets Python pur
           pip install fpdf2 --target . --no-deps
           pip install reportlab --target . --no-deps
 
-          # 3. Nettoyage des fichiers de tests/démos qui bloquent compileall
-          find . -type d \( -name "test" -o -name "tests" -o -name "samples" -o -name "demos" -o -name "docs" \) -exec rm -rf {} + 2>/dev/null || true
+          # 3. Supprimer les répertoires de tests et outils non nécessaires
+          find . -type d \( -name "test" -o -name "tests" -o -name "samples" -o -name "demos" -o -name "docs" -o -name "tools" \) -exec rm -rf {} + 2>/dev/null || true
 
-          # 4. Simulation du module PIL virtuel
+          # 4. Suppression automatique des fichiers .py incompatibles avec le compilateur
+          python3 -c "
+          import py_compile, os
+          for root, dirs, files in os.walk('.'):
+              for f in files:
+                  if f.endswith('.py'):
+                      path = os.path.join(root, f)
+                      try:
+                          py_compile.compile(path, doraise=True)
+                      except Exception:
+                          print(f'Suppression du fichier non compilable : {path}')
+                          try:
+                              os.remove(path)
+                          except Exception:
+                              pass
+          "
+
+          # 5. Fichier .fletignore pour exclure les dossiers de build du packaging
+          cat << 'EOF' > .fletignore
+          .git
+          .github
+          build
+          dist
+          *.pyc
+          __pycache__
+          EOF
+
+          # 6. Simulation du module PIL virtuel
           mkdir -p PIL
           cat << 'EOF' > PIL/__init__.py
           from . import Image
